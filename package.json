@@ -1,0 +1,21 @@
+{
+  "name": "tracking",
+  "version": "1.0.0",
+  "description": "A self-hosted device tracking and recovery system for Uganda. Track your own devices when stolen using GPS, network location, and remote alerts.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.16.1",
+    "dotenv": "^17.4.2",
+    "socket.io-client": "^4.8.3"
+  }
+}

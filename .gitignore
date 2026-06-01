@@ -1,0 +1,10 @@
+node_modules/
+.env
+*.local
+dist/
+.DS_Store
+*.log
+coverage/
+.expo/
+mobile/google-services.json
+mobile/assets/alert.wav
