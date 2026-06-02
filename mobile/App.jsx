@@ -1,22 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator, AppState } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import * as SplashScreen from 'expo-splash-screen'
-
 import { useStore } from './src/store/useStore'
 import { connectSocket, disconnectSocket } from './src/services/socketService'
 import { startCommandPoller, stopCommandPoller } from './src/services/commandPoller'
-
 import OnboardingScreen from './src/screens/OnboardingScreen'
-import HomeScreen       from './src/screens/HomeScreen'
-import SettingsScreen   from './src/screens/SettingsScreen'
-
-// Keep the splash visible until we've checked SecureStore
-SplashScreen.preventAutoHideAsync().catch(() => {})
+import HomeScreen from './src/screens/HomeScreen'
+import SettingsScreen from './src/screens/SettingsScreen'
 
 const Stack = createNativeStackNavigator()
 
@@ -26,28 +20,18 @@ export default function App() {
   const appState = useRef(AppState.currentState)
 
   useEffect(() => {
-    const fallback = setTimeout(() => {
-      setBooting(false)
-      SplashScreen.hideAsync().catch(() => {})
-    }, 4000)
-
+    const fallback = setTimeout(() => setBooting(false), 4000)
     loadFromStorage()
       .catch(err => console.warn('[App] boot error:', err))
-      .finally(() => {
-        clearTimeout(fallback)
-        setBooting(false)
-        SplashScreen.hideAsync().catch(() => {})
-      })
+      .finally(() => { clearTimeout(fallback); setBooting(false) })
   }, [])
 
   useEffect(() => {
     if (!isRegistered) return
     connectSocket()
     startCommandPoller()
-    const sub = AppState.addEventListener('change', async (next) => {
-      if (appState.current.match(/inactive|background/) && next === 'active') {
-        connectSocket()
-      }
+    const sub = AppState.addEventListener('change', (next) => {
+      if (appState.current.match(/inactive|background/) && next === 'active') connectSocket()
       appState.current = next
     })
     return () => { sub.remove(); disconnectSocket(); stopCommandPoller() }
@@ -73,7 +57,7 @@ export default function App() {
               <Stack.Screen name="Onboarding" component={OnboardingScreen} />
             ) : (
               <>
-                <Stack.Screen name="Home"     component={HomeScreen} />
+                <Stack.Screen name="Home" component={HomeScreen} />
                 <Stack.Screen name="Settings" component={SettingsScreen}
                   options={{ animation: 'slide_from_right' }} />
               </>

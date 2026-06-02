@@ -5,10 +5,10 @@ import {
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import * as Battery from 'expo-battery'
-import * as Network from 'expo-network'
 import * as Location from 'expo-location'
 import * as Haptics from 'expo-haptics'
+const getBattery = () => require('expo-battery')
+const getNetwork  = () => require('expo-network')
 import { useStore } from '../store/useStore'
 import { apiPost, apiGet } from '../services/api'
 import { startTracking, stopTracking, isTracking } from '../services/locationTask'
@@ -53,10 +53,13 @@ export default function HomeScreen({ navigation }) {
   }, [])
 
   useEffect(() => {
-    const sub = Battery.addBatteryLevelListener(({ batteryLevel }) => {
-      setBattery(Math.round(batteryLevel * 100))
-    })
-    return () => sub.remove()
+    let sub
+    try {
+      sub = getBattery().addBatteryLevelListener(({ batteryLevel }) => {
+        setBattery(Math.round(batteryLevel * 100))
+      })
+    } catch {}
+    return () => { try { sub?.remove() } catch {} }
   }, [])
 
   function startPulse() {
@@ -80,9 +83,9 @@ export default function HomeScreen({ navigation }) {
   const loadStatus = useCallback(async () => {
     try {
       const [bat, net, tracking_] = await Promise.all([
-        Battery.getBatteryLevelAsync(),
-        Network.getNetworkStateAsync(),
-        isTracking(),
+        getBattery().getBatteryLevelAsync().catch(() => 0),
+        getNetwork().getNetworkStateAsync().catch(() => ({ isConnected: false })),
+        Promise.resolve(isTracking()),
       ])
       setBattery(Math.round(bat * 100))
       setTracking(tracking_)
