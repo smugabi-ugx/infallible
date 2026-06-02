@@ -1,9 +1,7 @@
 import { io } from 'socket.io-client'
 import { useDeviceStore } from '../store/devices'
 
-// In dev: connect to same origin (proxied by Vite)
-// In prod: VITE_SERVER_URL = https://your-server.railway.app
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || window.location.origin
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://infallible.onrender.com'
 
 let socket = null
 

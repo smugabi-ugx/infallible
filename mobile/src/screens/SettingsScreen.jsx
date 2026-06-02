@@ -7,7 +7,7 @@ import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as SecureStore from 'expo-secure-store'
 import { useStore } from '../store/useStore'
-import { startTracking, stopTracking, isTracking, INTERVALS } from '../services/locationTask'
+import { startTracking, stopTracking, isTracking } from '../services/locationTask'
 
 const C = {
   bg: '#030712', card: '#0b1120', border: 'rgba(255,255,255,0.06)',
@@ -30,7 +30,7 @@ export default function SettingsScreen({ navigation }) {
   const [tracking, setTracking] = useState(false)
 
   useEffect(() => {
-    isTracking().then(setTracking)
+    setTracking(isTracking())
   }, [])
 
   const handleTrackingChange = async (mode) => {

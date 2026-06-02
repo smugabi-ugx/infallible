@@ -30,11 +30,12 @@ const STEPS = ['Server', 'Token', 'Permissions', 'Done']
 
 export default function OnboardingScreen() {
   const [step, setStep] = useState(0)
-  const [serverUrl, setServerUrl] = useState('http://192.168.1.100:3000')
+  const [serverUrl, setServerUrl] = useState('https://infallible.onrender.com')
   const [token, setToken] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const setRegistered = useStore(s => s.setRegistered)
+  // Hold registration data until the user completes all steps
+  const [pendingReg, setPendingReg] = useState(null)
 
   // ── Step 0: Verify server ────────────────────────────────────
   const handleServerCheck = async () => {
@@ -56,7 +57,7 @@ export default function OnboardingScreen() {
     }
   }
 
-  // ── Step 1: Validate token & register device ─────────────────
+  // ── Step 1: Validate token & store locally (no setRegistered yet) ──
   const handleTokenSubmit = async () => {
     setError('')
     if (!token.trim() || token.trim().length < 10) {
@@ -67,24 +68,20 @@ export default function OnboardingScreen() {
     try {
       const deviceInfo = await collectDeviceInfo()
 
-      // Verify token exists and update device info
       const res = await axios.put(
         `${serverUrl}/api/devices/by-token`,
-        {
-          deviceToken: token.trim(),
-          ...deviceInfo,
-        },
+        { deviceToken: token.trim(), ...deviceInfo },
         { timeout: 8000 }
       )
 
       if (!res.data.success) throw new Error(res.data.error || 'Invalid token')
 
-      await useStore.getState().setRegistered({
+      // Store locally — don't call setRegistered yet or navigator jumps away
+      setPendingReg({
         deviceToken: token.trim(),
-        deviceId: res.data.device.id,
+        deviceId:    String(res.data.device.id),
         serverUrl,
       })
-
       setStep(2)
     } catch (err) {
       const msg = err.response?.data?.error || err.message
@@ -94,11 +91,10 @@ export default function OnboardingScreen() {
     }
   }
 
-  // ── Step 2: Request permissions ──────────────────────────────
+  // ── Step 2: Request permissions & start tracking ─────────────
   const handlePermissions = async () => {
     setLoading(true)
     try {
-      // Location (foreground first, then background)
       const { status: fg } = await Location.requestForegroundPermissionsAsync()
       if (fg !== 'granted') {
         Alert.alert('Location Required', 'Infallible needs location access to protect your device.', [{ text: 'OK' }])
@@ -107,7 +103,6 @@ export default function OnboardingScreen() {
       }
       await Location.requestBackgroundPermissionsAsync()
 
-      // Notifications
       if (Device.isDevice) {
         const { status } = await Notifications.requestPermissionsAsync()
         if (status !== 'granted') {
@@ -115,14 +110,19 @@ export default function OnboardingScreen() {
         }
       }
 
-      // Start background tracking
       await startTracking('balanced')
-
       setStep(3)
     } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // ── Step 3: Finalise registration → navigator auto-switches to Home ──
+  const handleFinish = () => {
+    if (pendingReg) {
+      useStore.getState().setRegistered(pendingReg)
     }
   }
 
@@ -155,7 +155,7 @@ export default function OnboardingScreen() {
                 autoCapitalize="none"
                 keyboardType="url"
               />
-              <Hint text="💡 On Windows: run ipconfig in terminal to find your IP address." />
+              <Hint text="💡 The live server is pre-filled. Only change this if running locally." />
               {error ? <ErrorBanner text={error} /> : null}
               <PrimaryButton title="Check Connection" onPress={handleServerCheck} loading={loading} />
             </StepContainer>
@@ -228,10 +228,7 @@ export default function OnboardingScreen() {
                 </View>
               ))}
               <View style={styles.spacer} />
-              <PrimaryButton
-                title="Open Dashboard →"
-                onPress={() => useStore.setState({ isRegistered: true })}
-              />
+              <PrimaryButton title="Open Dashboard →" onPress={handleFinish} />
             </StepContainer>
           )}
 

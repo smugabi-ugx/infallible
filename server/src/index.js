@@ -18,12 +18,21 @@ const db = require('./models');
 const app = express();
 const server = http.createServer(app);
 
+// Allow dashboard origin — vercel.app wildcard + explicit CORS_ORIGIN override
+const allowOrigin = (origin, callback) => {
+  if (!origin) return callback(null, true) // server-to-server / curl
+  const allowed = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+    : []
+  const ok = allowed.includes(origin)
+    || origin.endsWith('.vercel.app')
+    || origin.startsWith('http://localhost')
+  ok ? callback(null, true) : callback(new Error('CORS: ' + origin + ' not allowed'))
+}
+
 // Socket.io setup for real-time updates
 const io = new Server(server, {
-  cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-    methods: ['GET', 'POST']
-  }
+  cors: { origin: allowOrigin, methods: ['GET', 'POST'] }
 });
 
 // Make io accessible in routes
@@ -31,10 +40,7 @@ app.set('io', io);
 
 // Middleware
 app.use(helmet());
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-  credentials: true
-}));
+app.use(cors({ origin: allowOrigin, credentials: true }));
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

@@ -25,19 +25,23 @@ export const useStore = create((set, get) => ({
 
   // ── Actions ─────────────────────────────────────────────────
   setRegistered: async ({ deviceToken, deviceId, serverUrl }) => {
-    await SecureStore.setItemAsync('deviceToken', deviceToken)
-    await SecureStore.setItemAsync('deviceId', deviceId)
+    await SecureStore.setItemAsync('deviceToken', String(deviceToken))
+    await SecureStore.setItemAsync('deviceId', String(deviceId))
     await SecureStore.setItemAsync('serverUrl', serverUrl)
-    set({ deviceToken, deviceId, serverUrl, isRegistered: true })
+    set({ deviceToken: String(deviceToken), deviceId: String(deviceId), serverUrl, isRegistered: true })
   },
 
   loadFromStorage: async () => {
-    const deviceToken = await SecureStore.getItemAsync('deviceToken')
-    const deviceId = await SecureStore.getItemAsync('deviceId')
-    const serverUrl = await SecureStore.getItemAsync('serverUrl')
-    if (deviceToken && deviceId && serverUrl) {
-      set({ deviceToken, deviceId, serverUrl, isRegistered: true })
-      return true
+    try {
+      const deviceToken = await SecureStore.getItemAsync('deviceToken')
+      const deviceId    = await SecureStore.getItemAsync('deviceId')
+      const serverUrl   = await SecureStore.getItemAsync('serverUrl')
+      if (deviceToken && deviceId && serverUrl) {
+        set({ deviceToken, deviceId, serverUrl, isRegistered: true })
+        return true
+      }
+    } catch (err) {
+      console.warn('[Store] loadFromStorage error:', err)
     }
     return false
   },

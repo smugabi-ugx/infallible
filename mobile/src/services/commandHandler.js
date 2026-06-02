@@ -1,54 +1,22 @@
-import { Audio } from 'expo-av'
+import * as Location from 'expo-location'
 import * as Haptics from 'expo-haptics'
 import * as SecureStore from 'expo-secure-store'
 import { apiPost } from './api'
-import { startTracking } from './locationTask'
+import { startTracking, stopTracking } from './locationTask'
 
-let alarmSound = null
 let alarmInterval = null
 
-// ── Ring alarm ───────────────────────────────────────────────────
+// ── Ring alarm (vibration only) ──────────────────────────────────
 export async function ringAlarm(durationMs = 30_000) {
-  // Haptic pulse — works without any audio file
   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
   alarmInterval = setInterval(
     () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
     800
   )
-
-  // Audio — try local WAV first, fall back to an online siren
-  try {
-    await Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      shouldDuckAndroid:    false,
-      staysActiveInBackground: true,
-    })
-
-    let source
-    try {
-      // Local file (place alert.wav in mobile/assets/ for production)
-      source = require('../../assets/alert.wav')
-    } catch {
-      // Fallback: free siren hosted on GitHub
-      source = { uri: 'https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg' }
-    }
-
-    const { sound } = await Audio.Sound.createAsync(source, { isLooping: true, volume: 1.0 })
-    alarmSound = sound
-    await sound.playAsync()
-  } catch (err) {
-    console.warn('[CommandHandler] Audio failed, vibration only:', err.message)
-  }
-
   setTimeout(() => stopAlarm(), durationMs)
 }
 
-export async function stopAlarm() {
-  if (alarmSound) {
-    await alarmSound.stopAsync()
-    await alarmSound.unloadAsync()
-    alarmSound = null
-  }
+export function stopAlarm() {
   if (alarmInterval) {
     clearInterval(alarmInterval)
     alarmInterval = null
@@ -58,22 +26,14 @@ export async function stopAlarm() {
 // ── Take photo ───────────────────────────────────────────────────
 export async function capturePhoto(commandId) {
   try {
-    const deviceToken = await SecureStore.getItemAsync('deviceToken')
-    const serverUrl   = await SecureStore.getItemAsync('serverUrl')
-    if (!deviceToken || !serverUrl) return
-
     // In production, mount a hidden CameraView ref and capture
-    // Here we acknowledge and report the attempt
-    await apiPost('/commands/ack/' + commandId, {
-      deviceToken,
-      status: 'success',
-    })
+    await apiPost('/commands/ack/' + commandId, { status: 'success' })
   } catch (err) {
-    console.error('[CommandHandler] Photo failed:', err)
+    console.error('[CommandHandler] Photo ack failed:', err)
   }
 }
 
-// ── Handle FCM data payload ──────────────────────────────────────
+// ── Handle FCM / socket command ──────────────────────────────────
 export async function handleCommand({ type, commandId, payload }) {
   const deviceToken = await SecureStore.getItemAsync('deviceToken')
   let status = 'success'
@@ -85,18 +45,17 @@ export async function handleCommand({ type, commandId, payload }) {
         await ringAlarm(payload?.duration ? payload.duration * 1000 : 30_000)
         break
 
-      case 'locate':
-        // Force an immediate high-accuracy location report
-        const Location = require('expo-location')
+      case 'locate': {
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.BestForNavigation })
         await apiPost('/locations/report', {
           deviceToken,
-          latitude:    loc.coords.latitude,
-          longitude:   loc.coords.longitude,
-          accuracy:    loc.coords.accuracy,
-          recordedAt:  new Date(loc.timestamp).toISOString(),
+          latitude:   loc.coords.latitude,
+          longitude:  loc.coords.longitude,
+          accuracy:   loc.coords.accuracy,
+          recordedAt: new Date(loc.timestamp).toISOString(),
         })
         break
+      }
 
       case 'photo':
         await capturePhoto(commandId)
@@ -119,8 +78,7 @@ export async function handleCommand({ type, commandId, payload }) {
         break
 
       case 'tracking_off':
-        const { stopTracking } = require('./locationTask')
-        await stopTracking()
+        stopTracking()
         break
 
       default:
@@ -132,13 +90,8 @@ export async function handleCommand({ type, commandId, payload }) {
     errorMessage = err.message
   }
 
-  // Acknowledge execution to server
   try {
-    await apiPost(`/commands/ack/${commandId}`, {
-      deviceToken,
-      status,
-      errorMessage,
-    })
+    await apiPost(`/commands/ack/${commandId}`, { deviceToken, status, errorMessage })
   } catch {}
 }
 
