@@ -98,11 +98,12 @@ async function startServer() {
     await db.sequelize.authenticate();
     console.log('Database connected successfully');
     
-    // Sync models (in dev only - use migrations in production)
-    if (process.env.NODE_ENV === 'development') {
-      await db.sequelize.sync({ alter: true });
-      console.log('Database models synced');
-    }
+    // Sync models — create tables if they don't exist (safe in production)
+    await db.sequelize.sync({
+      force: false,
+      alter: process.env.NODE_ENV === 'development',
+    });
+    console.log('Database models synced');
     
     server.listen(PORT, () => {
       console.log(`
