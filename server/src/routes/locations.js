@@ -83,7 +83,13 @@ router.post('/report', [
       });
     }
 
-    const { deviceToken, ...locationData } = req.body;
+    // Accept device token from header (x-device-token) OR body
+    const deviceToken = req.headers['x-device-token'] || req.body.deviceToken;
+    const { ...locationData } = req.body;
+
+    if (!deviceToken) {
+      return res.status(401).json({ success: false, error: 'Device token required' });
+    }
 
     // Find device by token
     const device = await db.Device.findOne({

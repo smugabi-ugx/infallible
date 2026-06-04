@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { View, Text, StyleSheet, ActivityIndicator, AppState } from 'react-native'
+import { View, Text, StyleSheet, ActivityIndicator, AppState, Image } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import * as SplashScreen from 'expo-splash-screen'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -47,9 +47,10 @@ export default function App() {
     return (
       <View style={s.boot}>
         <StatusBar style="light" />
-        <Text style={s.logo}>🎯</Text>
+        <Image source={require('./assets/icon.png')} style={s.bootIcon} resizeMode="cover" />
         <Text style={s.name}>Infallible</Text>
-        <ActivityIndicator color="#6366f1" size="small" style={{ marginTop: 24 }} />
+        <Text style={s.tagline}>Silent device protection</Text>
+        <ActivityIndicator color="#6366f1" size="small" style={{ marginTop: 28 }} />
       </View>
     )
   }
@@ -84,7 +85,8 @@ const THEME = {
 }
 
 const s = StyleSheet.create({
-  boot: { flex: 1, backgroundColor: '#030712', alignItems: 'center', justifyContent: 'center' },
-  logo: { fontSize: 56, marginBottom: 12 },
-  name: { fontSize: 24, fontWeight: '700', color: '#ffffff', letterSpacing: -0.5 },
+  boot:     { flex: 1, backgroundColor: '#030712', alignItems: 'center', justifyContent: 'center' },
+  bootIcon: { width: 96, height: 96, borderRadius: 24, marginBottom: 20 },
+  name:     { fontSize: 28, fontWeight: '800', color: '#ffffff', letterSpacing: -0.5 },
+  tagline:  { fontSize: 13, color: '#6366f1', marginTop: 6, letterSpacing: 0.3 },
 })

@@ -66,10 +66,10 @@ app.use('/api/auth', authRoutes)
 // /by-token and /fcm-token: public mobile endpoints (rate limited)
 // All other /devices routes: require JWT + owner or admin role
 app.use('/api/devices', (req, res, next) => {
-  const mobilePublic = ['/by-token', '/fcm-token']
-  if (mobilePublic.includes(req.path) && req.method === 'PUT') {
-    return deviceRegisterLimiter(req, res, next)
-  }
+  const mobilePublicPut  = ['/by-token', '/fcm-token']
+  const mobilePublicPost = ['/self/stolen', '/self/recovered']
+  if (mobilePublicPut.includes(req.path)  && req.method === 'PUT')  return deviceRegisterLimiter(req, res, next)
+  if (mobilePublicPost.includes(req.path) && req.method === 'POST') return next()
   authenticateToken(req, res, next)
 }, deviceRoutes)
 

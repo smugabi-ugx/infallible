@@ -126,6 +126,42 @@ router.put('/fcm-token', async (req, res, next) => {
   }
 });
 
+// Mobile self-report: device marks itself stolen (device token auth, no JWT)
+router.post('/self/stolen', async (req, res, next) => {
+  try {
+    const deviceToken = req.headers['x-device-token'] || req.body.deviceToken
+    if (!deviceToken) return res.status(400).json({ success: false, error: 'deviceToken required' })
+
+    const device = await db.Device.findOne({ where: { deviceToken } })
+    if (!device) return res.status(404).json({ success: false, error: 'Device not found' })
+
+    await device.update({ isStolen: true, stolenAt: new Date(), trackingMode: 'high', isStealthMode: true })
+
+    const io = req.app.get('io')
+    io.to(`device:${device.id}`).emit('device:stolen', { deviceId: device.id, isStolen: true, stolenAt: device.stolenAt })
+
+    res.json({ success: true, device })
+  } catch (error) { next(error) }
+})
+
+// Mobile self-report: device marks itself recovered
+router.post('/self/recovered', async (req, res, next) => {
+  try {
+    const deviceToken = req.headers['x-device-token'] || req.body.deviceToken
+    if (!deviceToken) return res.status(400).json({ success: false, error: 'deviceToken required' })
+
+    const device = await db.Device.findOne({ where: { deviceToken } })
+    if (!device) return res.status(404).json({ success: false, error: 'Device not found' })
+
+    await device.update({ isStolen: false, stolenAt: null, trackingMode: 'balanced', isStealthMode: false })
+
+    const io = req.app.get('io')
+    io.to(`device:${device.id}`).emit('device:stolen', { deviceId: device.id, isStolen: false })
+
+    res.json({ success: true, device })
+  } catch (error) { next(error) }
+})
+
 // Update device by token (used by mobile app on first launch)
 router.put('/by-token', async (req, res, next) => {
   try {

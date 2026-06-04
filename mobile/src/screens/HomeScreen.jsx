@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import {
   View, Text, TouchableOpacity, StyleSheet, Animated,
-  ScrollView, RefreshControl, Platform, Dimensions, Alert,
+  ScrollView, RefreshControl, Platform, Dimensions, Alert, Image,
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -124,7 +124,7 @@ export default function HomeScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              await apiPost(`/devices/${deviceId}/stolen`, {})
+              await apiPost('/devices/self/stolen', {})
               await startTracking('high')
               updateStatus({ isStolen: true, trackingMode: 'high' })
               setTracking(true)
@@ -148,7 +148,7 @@ export default function HomeScreen({ navigation }) {
           text: 'Mark Recovered',
           onPress: async () => {
             try {
-              await apiPost(`/devices/${deviceId}/recovered`, {})
+              await apiPost('/devices/self/recovered', {})
               await startTracking('balanced')
               updateStatus({ isStolen: false, trackingMode: 'balanced' })
               await getHaptics().notificationAsync(getHaptics().NotificationFeedbackType.Success)
@@ -172,9 +172,11 @@ export default function HomeScreen({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.logoRow}>
-          <View style={styles.logoIcon}>
-            <Text style={styles.logoEmoji}>🛡</Text>
-          </View>
+          <Image
+            source={require('../../assets/icon.png')}
+            style={styles.logoImg}
+            resizeMode="cover"
+          />
           <Text style={styles.logoText}>Infallible</Text>
         </View>
         <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={styles.settingsBtn}>
@@ -311,14 +313,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4,
   },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoIcon: {
-    width: 32, height: 32, borderRadius: 9,
-    backgroundColor: C.primary,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  logoEmoji: { fontSize: 16 },
-  logoText: { fontSize: 18, fontWeight: '700', color: C.text, letterSpacing: -0.3 },
+  logoRow:  { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  logoImg:  { width: 32, height: 32, borderRadius: 8 },
+  logoText: { fontSize: 18, fontWeight: '800', color: C.text, letterSpacing: -0.3 },
   settingsBtn: { padding: 8 },
   settingsIcon: { fontSize: 20, color: C.sub },
 

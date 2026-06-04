@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
-  Alert, Modal,
+  Alert, Modal, Image,
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import axios from 'axios'
@@ -135,7 +135,11 @@ export default function OnboardingScreen() {
       {step === 0 && (
         <View style={s.welcome}>
           <View style={s.welcomeGlow} />
-          <Text style={s.welcomeIcon}>🛡️</Text>
+          <Image
+            source={require('../../assets/icon.png')}
+            style={s.welcomeIcon}
+            resizeMode="cover"
+          />
           <Text style={s.welcomeTitle}>Infallible</Text>
           <Text style={s.welcomeSub}>
             Silent device protection.{'\n'}Track. Command. Recover.
@@ -288,7 +292,7 @@ const s = StyleSheet.create({
     position: 'absolute', width: 300, height: 300, borderRadius: 150,
     backgroundColor: 'rgba(99,102,241,0.08)', top: '15%',
   },
-  welcomeIcon:  { fontSize: 64, marginBottom: 16 },
+  welcomeIcon:  { width: 96, height: 96, borderRadius: 24, marginBottom: 20 },
   welcomeTitle: { fontSize: 42, fontWeight: '800', color: C.text, letterSpacing: -1, marginBottom: 12 },
   welcomeSub:   { fontSize: 16, color: C.sub, textAlign: 'center', lineHeight: 24, marginBottom: 40 },
   welcomeFeatures: { gap: 14, alignSelf: 'stretch', marginBottom: 40 },
