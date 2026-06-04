@@ -71,13 +71,6 @@ app.use('/api/devices', (req, res, next) => {
     return deviceRegisterLimiter(req, res, next)
   }
   authenticateToken(req, res, next)
-}, (req, res, next) => {
-  // RBAC: police can only read, owners manage their own devices
-  const readOnly = req.method === 'GET' && req.userRole === 'police'
-  if (readOnly || ['owner', 'admin'].includes(req.userRole) || !req.userRole) {
-    return next()
-  }
-  return res.status(403).json({ success: false, error: 'Forbidden' })
 }, deviceRoutes)
 
 // ── Location, command, alert routes ───────────────────────────
