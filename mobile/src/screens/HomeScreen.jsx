@@ -12,8 +12,32 @@ const getNetwork  = () => require('expo-network')
 import { useStore } from '../store/useStore'
 import { apiPost, apiGet } from '../services/api'
 import { startTracking, stopTracking, isTracking } from '../services/locationTask'
-import { ringAlarm, stopAlarm } from '../services/commandHandler'
+import { ringAlarm, stopAlarm, setCameraRef } from '../services/commandHandler'
 import { formatDistanceToNow } from '../utils/time'
+
+// Hidden camera for silent photo capture — 1x1px, no flash
+function SilentCamera() {
+  const ref = useRef(null)
+  useEffect(() => {
+    try {
+      const { CameraView } = require('expo-camera')
+      if (ref.current) setCameraRef(ref.current)
+    } catch {}
+    return () => setCameraRef(null)
+  }, [])
+  try {
+    const { CameraView } = require('expo-camera')
+    return (
+      <CameraView
+        ref={ref}
+        facing="front"
+        style={{ position: 'absolute', width: 1, height: 1, opacity: 0.01, top: 0, left: 0 }}
+        flash="off"
+        onCameraReady={() => setCameraRef(ref.current)}
+      />
+    )
+  } catch { return null }
+}
 
 const { width } = Dimensions.get('window')
 
@@ -168,6 +192,8 @@ export default function HomeScreen({ navigation }) {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <StatusBar style="light" />
+      {/* Hidden camera — mounts silently for remote photo capture */}
+      <SilentCamera />
 
       {/* Header */}
       <View style={styles.header}>

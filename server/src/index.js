@@ -7,11 +7,12 @@ const http       = require('http');
 const rateLimit  = require('express-rate-limit');
 const { Server } = require('socket.io');
 
-const authRoutes    = require('./routes/auth');
-const deviceRoutes  = require('./routes/devices');
+const authRoutes     = require('./routes/auth');
+const deviceRoutes   = require('./routes/devices');
 const locationRoutes = require('./routes/locations');
 const commandRoutes  = require('./routes/commands');
 const alertRoutes    = require('./routes/alerts');
+const evidenceRoutes = require('./routes/evidence');
 const { errorHandler }     = require('./middleware/errorHandler');
 const { authenticateToken } = require('./middleware/auth');
 const { requireRole }       = require('./middleware/rbac');
@@ -90,6 +91,13 @@ app.use('/api/commands', (req, res, next) => {
 }, commandRoutes)
 
 app.use('/api/alerts', authenticateToken, alertRoutes)
+
+// Evidence — /photo is device-token-auth (mobile upload), /:deviceId is JWT (dashboard view)
+app.use('/api/evidence', (req, res, next) => {
+  const deviceToken = req.headers['x-device-token'] || req.body?.deviceToken
+  if (req.path === '/photo' && req.method === 'POST' && deviceToken) return next()
+  authenticateToken(req, res, next)
+}, evidenceRoutes)
 
 // ── Error handler ─────────────────────────────────────────────
 app.use(errorHandler)
