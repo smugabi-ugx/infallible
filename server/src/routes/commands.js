@@ -5,20 +5,19 @@ const db = require('../models');
 const { authorizeDevice } = require('../middleware/auth');
 const { sendNotification } = require('../services/firebase');
 
-// Get commands for a device — supports both /commands/:deviceId and /commands?deviceId=xxx
+// GET /api/commands?deviceId=xxx  — dashboard format
 router.get('/', async (req, res, next) => {
-  const deviceId = req.query.deviceId
-  if (!deviceId) return res.status(400).json({ success: false, error: 'deviceId required' })
-  req.params.deviceId = deviceId
-  // Verify ownership
-  const { authorizeDevice } = require('../middleware/auth')
-  authorizeDevice(req, res, next)
-}, async (req, res, next) => {
   try {
-    const deviceId = req.params.deviceId
-    const { status } = req.query
+    const { deviceId, status } = req.query
+    if (!deviceId) return res.status(400).json({ success: false, error: 'deviceId required' })
+
+    // Verify the authenticated user owns this device
+    const device = await db.Device.findOne({ where: { id: deviceId, userId: req.userId } })
+    if (!device) return res.status(403).json({ success: false, error: 'Not authorized' })
+
     const where = { deviceId }
     if (status) where.status = status
+
     const commands = await db.Command.findAll({ where, order: [['createdAt', 'DESC']], limit: 50 })
     res.json({ success: true, commands })
   } catch (error) { next(error) }
