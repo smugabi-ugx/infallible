@@ -87,6 +87,11 @@ export default function OnboardingScreen() {
       }
       await Location.requestBackgroundPermissionsAsync().catch(() => {})
       try { await require('expo-notifications').requestPermissionsAsync() } catch {}
+      // Camera permission — needed for silent photo capture on remote command
+      try {
+        const { Camera } = require('expo-camera')
+        await Camera.requestCameraPermissionsAsync()
+      } catch {}
       await startTracking('balanced')
       setStep(3)
     } catch (err) { setError(err.message) }
