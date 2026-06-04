@@ -23,12 +23,11 @@ export async function connectSocket() {
   console.log('[Socket] Connecting to', serverUrl)
 
   socket = io(serverUrl, {
-    transports:           ['websocket', 'polling'], // polling fallback for Render/proxied servers
-    upgrade:              true,
+    transports:           ['polling'], // Render free tier drops WebSocket upgrades — polling is stable
     reconnection:         true,
-    reconnectionDelay:    3000,
+    reconnectionDelay:    5000,
     reconnectionAttempts: 999,
-    timeout:              15_000,
+    timeout:              20_000,
   })
 
   socket.on('connect', () => {

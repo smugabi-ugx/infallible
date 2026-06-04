@@ -67,8 +67,8 @@ router.get('/:deviceId/latest', authorizeDevice, async (req, res, next) => {
 });
 
 // Report location (from mobile device)
+// deviceToken comes from x-device-token header OR body — both accepted
 router.post('/report', [
-  body('deviceToken').notEmpty(),
   body('latitude').isFloat({ min: -90, max: 90 }),
   body('longitude').isFloat({ min: -180, max: 180 }),
   body('accuracy').optional().isFloat(),
@@ -77,13 +77,10 @@ router.post('/report', [
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        errors: errors.array()
-      });
+      return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    // Accept device token from header (x-device-token) OR body
+    // Accept device token from header OR body
     const deviceToken = req.headers['x-device-token'] || req.body.deviceToken;
     const { ...locationData } = req.body;
 
