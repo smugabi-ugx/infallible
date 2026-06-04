@@ -134,7 +134,7 @@ async function handleSendCommand(req, res, next) {
   } catch (error) {
     next(error);
   }
-});
+}
 
 // Acknowledge command execution (from mobile)
 router.post('/ack/:commandId', async (req, res, next) => {
