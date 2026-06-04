@@ -44,8 +44,8 @@ app.set('io', io);
 app.use(helmet());
 app.use(cors({ origin: allowOrigin, credentials: true }));
 app.use(morgan('combined'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ── Rate limiters ─────────────────────────────────────────────
 // Fix 4: limit mobile device registration — 10 attempts per 15 min per IP

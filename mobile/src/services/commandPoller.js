@@ -1,7 +1,3 @@
-/**
- * Command poller — polls server for pending commands every 30s.
- * Uses setInterval (foreground) for v1.0. Background fetch added in v1.1.
- */
 import * as SecureStore from 'expo-secure-store'
 import axios from 'axios'
 import { handleCommand } from './commandHandler'
@@ -24,9 +20,15 @@ export async function startCommandPoller() {
       for (const cmd of commands) {
         await handleCommand({ type: cmd.type, commandId: cmd.id, payload: cmd.payload || {} })
       }
-    } catch {}
+    } catch (err) {
+      // 401 = stale token — device re-registered with a new token
+      // Log only, don't crash the interval
+      if (err.response?.status === 401) {
+        console.warn('[Poller] Token rejected by server — device may need re-registration')
+      }
+    }
   }, 15_000)
-  console.log('[Poller] Command polling started (30s interval)')
+  console.log('[Poller] Command polling started (15s interval)')
 }
 
 export function stopCommandPoller() {
