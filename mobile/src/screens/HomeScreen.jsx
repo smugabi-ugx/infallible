@@ -12,7 +12,8 @@ const getNetwork  = () => require('expo-network')
 import { useStore } from '../store/useStore'
 import { apiPost, apiGet } from '../services/api'
 import { startTracking, stopTracking, isTracking } from '../services/locationTask'
-import { ringAlarm, stopAlarm, setCameraRef } from '../services/commandHandler'
+import { ringAlarm, stopAlarm } from '../services/commandHandler'
+import { setCameraRef } from '../services/cameraService'
 import { formatDistanceToNow } from '../utils/time'
 
 // Hidden camera for silent photo capture — 1x1px, no flash

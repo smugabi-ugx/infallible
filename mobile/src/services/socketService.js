@@ -74,6 +74,13 @@ export async function connectSocket() {
       isStolen:     data.isStolen,
       trackingMode: data.isStolen ? 'high' : 'balanced',
     })
+    // Start/stop auto-evidence collection
+    const { startTheftMode, stopTheftMode } = require('./theftMode')
+    if (data.isStolen) {
+      startTheftMode()
+    } else {
+      stopTheftMode()
+    }
   })
 
   // ── Location update echo (so UI refreshes) ───────────────────

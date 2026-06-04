@@ -2,8 +2,12 @@ import * as SecureStore from 'expo-secure-store'
 import { apiPost } from './api'
 import { startTracking, stopTracking } from './locationTask'
 import { useStore } from '../store/useStore'
+import { capturePhoto } from './cameraService'
 
 let alarmInterval = null
+
+// Keep setCameraRef export for backward compatibility — now delegates to cameraService
+export { setCameraRef } from './cameraService'
 
 // ── Notify user on phone when a command is executed ──────────────
 async function notifyExecuted(message) {
@@ -72,31 +76,19 @@ export async function handleCommand({ type, commandId, payload }) {
       }
 
       case 'photo': {
-        if (_cameraRef) {
-          try {
-            const photo = await _cameraRef.takePictureAsync({
-              quality:         0.6,
-              base64:          true,
-              skipProcessing:  true,
-              flashMode:       'off',
-            })
-            await apiPost('/evidence/photo', {
-              imageBase64: photo.base64,
-              commandId,
-              trigger:     'remote_command',
-            })
-            await notifyExecuted('📷 Photo captured silently')
-            // ack handled here
-            await apiPost(`/commands/ack/${commandId}`, { deviceToken, status: 'success' })
-            return
-          } catch (e) {
-            // Camera not ready — ack as failed
-            status = 'failed'
-            errorMessage = 'Camera not available: ' + e.message
-          }
-        } else {
+        try {
+          const photo = await capturePhoto({ quality: 0.6, trigger: 'remote_command' })
+          await apiPost('/evidence/photo', {
+            imageBase64: photo.base64,
+            commandId,
+            trigger: 'remote_command',
+          })
+          await notifyExecuted('📷 Photo captured silently')
+          await apiPost(`/commands/ack/${commandId}`, { deviceToken, status: 'success' })
+          return
+        } catch (e) {
           status = 'failed'
-          errorMessage = 'Camera not mounted — open the app'
+          errorMessage = 'Camera: ' + e.message
         }
         break
       }

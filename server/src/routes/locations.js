@@ -206,6 +206,42 @@ router.post('/report/batch', [
   }
 });
 
+// Export location trail as CSV — for police reports
+router.get('/:deviceId/export.csv', authorizeDevice, async (req, res, next) => {
+  try {
+    const { deviceId } = req.params
+    const { from, to } = req.query
+
+    const where = { deviceId }
+    const { Op } = require('sequelize')
+    if (from || to) {
+      where.recordedAt = {}
+      if (from) where.recordedAt[Op.gte] = new Date(from)
+      if (to)   where.recordedAt[Op.lte] = new Date(to)
+    }
+
+    const locations = await db.Location.findAll({
+      where,
+      order: [['recordedAt', 'ASC']],
+      limit: 10000,
+    })
+
+    const device = await db.Device.findByPk(deviceId)
+    const deviceName = device?.name ?? deviceId
+
+    const headers = 'Timestamp,Latitude,Longitude,Accuracy(m),Speed(km/h),Battery%\n'
+    const rows = locations.map(l =>
+      `${l.recordedAt},${l.latitude},${l.longitude},${l.accuracy ?? ''},${l.speed ? (l.speed * 3.6).toFixed(1) : ''},${l.batteryLevel ?? ''}`
+    ).join('\n')
+
+    const filename = `infallible_trail_${deviceName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`
+
+    res.setHeader('Content-Type', 'text/csv')
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+    res.send(headers + rows)
+  } catch (error) { next(error) }
+})
+
 // Get location stats
 router.get('/:deviceId/stats', authorizeDevice, async (req, res, next) => {
   try {
