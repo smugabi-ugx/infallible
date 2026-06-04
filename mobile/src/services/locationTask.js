@@ -16,12 +16,17 @@ export async function startTracking(mode = 'balanced') {
   const accuracy = mode === 'high'
     ? Location.Accuracy.BestForNavigation
     : Location.Accuracy.Balanced
+
   reportInterval = setInterval(async () => {
     try {
       const loc = await Location.getCurrentPositionAsync({ accuracy })
       await reportLocation(loc)
-    } catch {}
+    } catch (e) {
+      console.warn('[Location] report failed:', e.message)
+    }
   }, interval)
+
+  console.log(`[Location] Tracking started — ${mode} every ${interval / 1000}s`)
 }
 
 export function stopTracking() {
@@ -29,14 +34,23 @@ export function stopTracking() {
 }
 
 export async function reportLocation(loc) {
+  // Include battery level with every location report
+  let batteryLevel = null
+  try {
+    const Battery = require('expo-battery')
+    const level = await Battery.getBatteryLevelAsync()
+    batteryLevel = Math.round(level * 100)
+  } catch {}
+
   await apiPost('/locations/report', {
-    latitude:   loc.coords.latitude,
-    longitude:  loc.coords.longitude,
-    accuracy:   loc.coords.accuracy,
-    altitude:   loc.coords.altitude,
-    speed:      loc.coords.speed,
-    bearing:    loc.coords.heading,
-    recordedAt: new Date(loc.timestamp).toISOString(),
+    latitude:     loc.coords.latitude,
+    longitude:    loc.coords.longitude,
+    accuracy:     loc.coords.accuracy,
+    altitude:     loc.coords.altitude,
+    speed:        loc.coords.speed,
+    bearing:      loc.coords.heading,
+    recordedAt:   new Date(loc.timestamp).toISOString(),
+    batteryLevel,
   })
 }
 
