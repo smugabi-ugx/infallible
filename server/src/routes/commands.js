@@ -5,7 +5,25 @@ const db = require('../models');
 const { authorizeDevice } = require('../middleware/auth');
 const { sendNotification } = require('../services/firebase');
 
-// Get commands for a device
+// Get commands for a device — supports both /commands/:deviceId and /commands?deviceId=xxx
+router.get('/', async (req, res, next) => {
+  const deviceId = req.query.deviceId
+  if (!deviceId) return res.status(400).json({ success: false, error: 'deviceId required' })
+  req.params.deviceId = deviceId
+  // Verify ownership
+  const { authorizeDevice } = require('../middleware/auth')
+  authorizeDevice(req, res, next)
+}, async (req, res, next) => {
+  try {
+    const deviceId = req.params.deviceId
+    const { status } = req.query
+    const where = { deviceId }
+    if (status) where.status = status
+    const commands = await db.Command.findAll({ where, order: [['createdAt', 'DESC']], limit: 50 })
+    res.json({ success: true, commands })
+  } catch (error) { next(error) }
+})
+
 router.get('/:deviceId', authorizeDevice, async (req, res, next) => {
   try {
     const { deviceId } = req.params;
@@ -31,7 +49,18 @@ router.get('/:deviceId', authorizeDevice, async (req, res, next) => {
   }
 });
 
-// Send command to device
+// Send command — supports POST /commands { deviceId, type } (dashboard)
+// and POST /commands/:deviceId { type } (legacy)
+router.post('/', [
+  body('deviceId').notEmpty().withMessage('deviceId required'),
+  body('type').isIn(['ring','lock','wipe','locate','message','photo','stealth_on','stealth_off','tracking_high','tracking_low','tracking_off']),
+  body('payload').optional().isObject()
+], async (req, res, next) => {
+  req.params.deviceId = req.body.deviceId
+  const { authorizeDevice } = require('../middleware/auth')
+  authorizeDevice(req, res, () => handleSendCommand(req, res, next))
+})
+
 router.post('/:deviceId', [
   authorizeDevice,
   body('type').isIn([
@@ -40,7 +69,9 @@ router.post('/:deviceId', [
     'tracking_high', 'tracking_low', 'tracking_off'
   ]),
   body('payload').optional().isObject()
-], async (req, res, next) => {
+], async (req, res, next) => handleSendCommand(req, res, next))
+
+async function handleSendCommand(req, res, next) {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
