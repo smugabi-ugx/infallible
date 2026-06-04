@@ -25,7 +25,7 @@ export async function startCommandPoller() {
         await handleCommand({ type: cmd.type, commandId: cmd.id, payload: cmd.payload || {} })
       }
     } catch {}
-  }, 30_000)
+  }, 15_000)
   console.log('[Poller] Command polling started (30s interval)')
 }
 
