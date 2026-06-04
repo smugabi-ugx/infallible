@@ -6,8 +6,10 @@ import { capturePhoto } from './cameraService'
 
 let alarmInterval = null
 
-// Keep setCameraRef export for backward compatibility — now delegates to cameraService
+// setCameraRef is now in cameraService — re-exported here so HomeScreen import still works
 export { setCameraRef } from './cameraService'
+
+// Remove old internal ref — cameraService handles it now
 
 // ── Notify user on phone when a command is executed ──────────────
 async function notifyExecuted(message) {
@@ -36,10 +38,6 @@ export async function ringAlarm(durationMs = 30_000) {
 export function stopAlarm() {
   if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null }
 }
-
-// ── Photo capture ref (set by HomeScreen camera component) ───────
-let _cameraRef = null
-export function setCameraRef(ref) { _cameraRef = ref }
 
 // ── Handle command ───────────────────────────────────────────────
 export async function handleCommand({ type, commandId, payload }) {
