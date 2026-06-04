@@ -5,9 +5,9 @@ import {
 } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import * as Location from 'expo-location'
-import * as Haptics from 'expo-haptics'
-const getBattery = () => require('expo-battery')
+const getLocation = () => require('expo-location')
+const getHaptics  = () => require('expo-haptics')
+const getBattery  = () => require('expo-battery')
 const getNetwork  = () => require('expo-network')
 import { useStore } from '../store/useStore'
 import { apiPost, apiGet } from '../services/api'
@@ -108,7 +108,7 @@ export default function HomeScreen({ navigation }) {
   }
 
   const handleRing = async () => {
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+    await getHaptics().notificationAsync(getHaptics().NotificationFeedbackType.Warning)
     if (ringing) { await stopAlarm(); setRinging(false) }
     else { await ringAlarm(30_000); setRinging(true); setTimeout(() => setRinging(false), 30_000) }
   }
@@ -128,7 +128,7 @@ export default function HomeScreen({ navigation }) {
               await startTracking('high')
               updateStatus({ isStolen: true, trackingMode: 'high' })
               setTracking(true)
-              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+              await getHaptics().notificationAsync(getHaptics().NotificationFeedbackType.Error)
             } catch (e) {
               Alert.alert('Error', 'Could not activate theft mode. Check your connection.')
             }
@@ -151,7 +151,7 @@ export default function HomeScreen({ navigation }) {
               await apiPost(`/devices/${deviceId}/recovered`, {})
               await startTracking('balanced')
               updateStatus({ isStolen: false, trackingMode: 'balanced' })
-              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+              await getHaptics().notificationAsync(getHaptics().NotificationFeedbackType.Success)
             } catch {
               Alert.alert('Error', 'Could not deactivate theft mode.')
             }

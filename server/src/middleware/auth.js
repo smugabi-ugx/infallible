@@ -24,8 +24,9 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    req.user = user;
+    req.user   = user;
     req.userId = decoded.userId;
+    req.userRole = decoded.role || user.role || 'owner'; // role from token, fallback to DB
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {

@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/auth'
 import {
-  Shield, Smartphone, Plus, LogOut, LayoutDashboard,
+  Smartphone, Plus, LogOut, LayoutDashboard,
   Bell, Command, Settings, Menu, X, ChevronRight
 } from 'lucide-react'
+import InfallibleIcon from './InfallibleIcon'
 
 const NAV = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', exact: true },
@@ -54,9 +55,7 @@ export default function Layout() {
         {/* Logo */}
         <div className="flex items-center justify-between px-5 h-16 border-b border-white/5">
           <Link to="/dashboard" className="flex items-center gap-2.5" onClick={() => setMobileOpen(false)}>
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-600/30">
-              <Shield className="h-4 w-4 text-white" />
-            </div>
+            <InfallibleIcon size={32} />
             <span className="font-bold text-white tracking-tight">Infallible</span>
           </Link>
           <button onClick={() => setMobileOpen(false)} className="lg:hidden text-slate-400 hover:text-white">
@@ -126,8 +125,8 @@ export default function Layout() {
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-indigo-600 rounded-md flex items-center justify-center">
-              <Shield className="h-3 w-3 text-white" />
+            <div className="w-6 h-6 rounded-md overflow-hidden">
+              <InfallibleIcon size={24} />
             </div>
             <span className="font-bold text-slate-900">Infallible</span>
           </div>

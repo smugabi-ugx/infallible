@@ -14,20 +14,20 @@ const authLimiter = rateLimit({
   message: { success: false, error: 'Too many attempts, please try again later' }
 });
 
-// Generate tokens
-const generateTokens = (userId) => {
+// Generate tokens — role is embedded so middleware doesn't need a DB call per request
+const generateTokens = (userId, role = 'owner') => {
   const accessToken = jwt.sign(
-    { userId },
+    { userId, role },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
   );
-  
+
   const refreshToken = jwt.sign(
-    { userId, type: 'refresh' },
+    { userId, role, type: 'refresh' },
     process.env.JWT_REFRESH_SECRET,
     { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
   );
-  
+
   return { accessToken, refreshToken };
 };
 
@@ -84,7 +84,7 @@ router.post('/register', [
       console.error('Failed to send verification email:', emailError);
     }
 
-    const tokens = generateTokens(user.id);
+    const tokens = generateTokens(user.id, user.role);
 
     res.status(201).json({
       success: true,
@@ -135,7 +135,7 @@ router.post('/login', [
     // Update last login
     await user.update({ lastLogin: new Date() });
 
-    const tokens = generateTokens(user.id);
+    const tokens = generateTokens(user.id, user.role);
 
     res.json({
       success: true,
@@ -176,7 +176,7 @@ router.post('/refresh', async (req, res, next) => {
       });
     }
 
-    const tokens = generateTokens(user.id);
+    const tokens = generateTokens(user.id, user.role);
 
     res.json({
       success: true,
