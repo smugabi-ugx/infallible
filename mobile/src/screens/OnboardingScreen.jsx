@@ -38,11 +38,13 @@ export default function OnboardingScreen() {
     setLoading(true)
     try {
       const deviceInfo = await collectDeviceInfo()
+      setError('Connecting to server... may take up to 60 seconds on first request.')
       const res = await axios.put(
         `${SERVER_URL}/api/devices/by-token`,
         { deviceToken: token.trim(), ...deviceInfo },
-        { timeout: 10000 }
+        { timeout: 60000 } // 60s — Render free tier cold start
       )
+      setError('')
       if (!res.data.success) throw new Error(res.data.error || 'Invalid token')
       setPendingReg({
         deviceToken: token.trim(),
